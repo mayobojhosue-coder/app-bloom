@@ -15,27 +15,17 @@ st.markdown("""
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
 }
 
-/* Texte dans les champs */
 textarea {
     color: black !important;
-    font-size: 16px;
-    background-color: white !important;
-    border-radius: 6px;
+    font-size: 15px;
 }
 
-/* Boutons */
 button {
     background-color: orange !important;
     color: white !important;
     font-weight: bold !important;
     border: none !important;
-    border-radius: 6px !important;
 }
-
-/* Classes couleur */
-.titre-orange { color: orange; }
-.date-blanche { color: white; }
-.message-orange { color: orange; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -53,27 +43,31 @@ if "saisie" not in st.session_state:
 # ======================
 if not st.session_state.go:
     st.markdown(
-        "<h1 style='text-align:center;color:orange;'>Bienvenue sur l'app Bloom</h1>",
+        "<h1 style='text-align:center;color:white;'>Bienvenue sur l'app Bloom</h1>",
         unsafe_allow_html=True
     )
     if st.button("Entrer"):
         st.session_state.go = True
-
+    # on AFFICHERA l'app au prochain rerun
 else:
+
     # ======================
-    # BASE DES NOMS
+    # BASE DES NOMS (FIXE)
     # ======================
     filles = {
-        "Angèle","Camille","Helena","Joëlle","Josée","Julyahana","Ketlyn","Maïva",
-        "Mariska","Romaine","Méléa","Kenza","Ketsia","Chrismaëlla","Jade","Daliah"
+        "Angèle","Camille","Helena","Joëlle","Ketlyn","Maïva",
+        "Mariska","Romaine","Méléa","Kenza","Chrismaëlla","Jade","Daliah","leila",
+        "Sainte","Ana","Holy","Danielle","Marielle"
     }
 
     garcons = {
         "Arthur","Alain Emmanuel","Jhosue","Stephen","Darlick","Jéremie",
-        "Iknan","Ighal","Yvan","Evans","André","Karl Emmanuel"
+        "Iknan","Ighal","Yvan","Evans","Patrick","Nathan"
     }
 
-    coachs = {"Noelvine","Jean Junior","Valérie","Aurel"}
+    coachs = {
+        "Noelvine","Jean Junior","Valérie","Aurel"
+    }
 
     # ======================
     # TITRE SELON LE JOUR
@@ -88,17 +82,15 @@ else:
     titre = titres.get(jour, "Liste de présence de Bloom")
 
     # ======================
-    # AFFICHAGE
+    # AFFICHAGE PRINCIPAL
     # ======================
-    st.markdown(f"<h1 class='titre-orange'>{titre}</h1>", unsafe_allow_html=True)
-
+    st.markdown(f"<h1 style='color:orange'>{titre}</h1>", unsafe_allow_html=True)
     st.markdown(
-        f"<p class='date-blanche'>Date : {date.today().strftime('%d/%m/%Y')}</p>",
+        f"<p style='color:white'>Date : {date.today().strftime('%d/%m/%Y')}</p>",
         unsafe_allow_html=True
     )
-
     st.markdown(
-        "<p class='message-orange'>"
+        "<p style='color:orange;font-weight:bold'>"
         "Écrivez ici le nom des présents aujourd’hui (un par ligne)"
         "</p>",
         unsafe_allow_html=True
@@ -117,6 +109,7 @@ else:
     # TRAITEMENT
     # ======================
     if valider:
+
         def clean(n):
             return n.strip().capitalize()
 
@@ -126,10 +119,12 @@ else:
             if n.strip()
         }
 
+        # PRÉSENTS PAR GROUPE
         filles_p = filles & presents
         garcons_p = garcons & presents
         coachs_p = coachs & presents
 
+        # ABSENTS (LOGIQUE CORRECTE)
         filles_abs = filles - filles_p
         garcons_abs = garcons - garcons_p
         coachs_abs = coachs - coachs_p
@@ -143,15 +138,15 @@ else:
             "PRÉSENTS\n"
         )
 
-        texte += "\n".join(f"✅ {n}" for n in sorted(presents)) if presents else "Aucun"
+        texte += "\n".join(f"🟢 {n}" for n in sorted(presents)) if presents else "Aucun"
 
         texte += "\n\nABSENTS\n"
         texte += "\n".join(
-            f"❌ {n}" for n in sorted(filles_abs | garcons_abs)
+            f"🔴 {n}" for n in sorted(filles_abs | garcons_abs)
         ) if (filles_abs or garcons_abs) else "Aucun"
 
         texte += "\n\nABSENTS COACHS\n"
-        texte += "\n".join(f"❌ {n}" for n in sorted(coachs_abs)) if coachs_abs else "Aucun"
+        texte += "\n".join(f"🔴 {n}" for n in sorted(coachs_abs)) if coachs_abs else "Aucun"
 
         texte += (
             "\n\nTOTAUX PRÉSENTS\n"
