@@ -1,157 +1,168 @@
 import streamlit as st
+import sqlite3
 from datetime import date
+import unicodedata
+import difflib
 
 # ======================
-# CONFIG PAGE
+# CONFIG
 # ======================
-st.set_page_config(page_title="Bloom", layout="wide")
+st.set_page_config(page_title="Bloom - Présence", layout="wide")
 
 # ======================
-# STYLE GLOBAL
+# SESSION
+# ======================
+if "show_app" not in st.session_state:
+    st.session_state.show_app = False
+if "noms_input" not in st.session_state:
+    st.session_state.noms_input = ""
+
+# ======================
+# STYLE
 # ======================
 st.markdown("""
 <style>
-.stApp {
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-}
-
-textarea {
-    color: black !important;
-    font-size: 15px;
-}
-
-button {
-    background-color: orange !important;
-    color: white !important;
-    font-weight: bold !important;
-    border: none !important;
+.welcome {
+    background-color: black;
+    color: white;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 38px;
+    font-weight: bold;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ======================
-# ÉTAT INITIAL
+# BIENVENUE
 # ======================
-if "go" not in st.session_state:
-    st.session_state.go = False
-
-if "saisie" not in st.session_state:
-    st.session_state.saisie = ""
-
-# ======================
-# MESSAGE BIENVENUE
-# ======================
-if not st.session_state.go:
-    st.markdown(
-        "<h1 style='text-align:center;color:white;'>Bienvenue sur l'app Bloom</h1>",
-        unsafe_allow_html=True
-    )
+if not st.session_state.show_app:
+    st.markdown("<div class='welcome'>🌸 Bienvenue sur l’app Bloom</div>", unsafe_allow_html=True)
     if st.button("Entrer"):
-        st.session_state.go = True
-    # on AFFICHERA l'app au prochain rerun
-else:
+        st.session_state.show_app = True
+        st.rerun()
+    st.stop()
 
-    # ======================
-    # BASE DES NOMS (FIXE)
-    # ======================
-    filles = {
-        "Angèle","Camille","Helena","Joëlle","Ketlyn","Maïva",
-        "Mariska","Romaine","Méléa","Kenza","Chrismaëlla","Jade","Daliah","leila",
-        "Sainte","Ana","Holy","Danielle","Marielle"
-    }
+# ======================
+# FONCTIONS
+# ======================
+def normaliser(txt):
+    txt = txt.lower()
+    txt = unicodedata.normalize("NFD", txt)
+    return "".join(c for c in txt if unicodedata.category(c) != "Mn").strip()
 
-    garcons = {
-        "Arthur","Alain Emmanuel","Jhosue","Stephen","Darlick","Jéremie",
-        "Iknan","Ighal","Yvan","Evans","Patrick","Nathan"
-    }
+def capitaliser(nom):
+    return " ".join(p.capitalize() for p in nom.split())
 
-    coachs = {
-        "Noelvine","Jean Junior","Valérie","Aurel"
-    }
+def trouver_nom(entree, base):
+    base_norm = {normaliser(n): n for n in base}
+    e = normaliser(entree)
+    if e in base_norm:
+        return base_norm[e]
+    proche = difflib.get_close_matches(e, base_norm.keys(), n=1, cutoff=0.7)
+    if proche:
+        return base_norm[proche[0]]
+    return None
 
-    # ======================
-    # TITRE SELON LE JOUR
-    # ======================
-    jour = date.today().weekday()
-    titres = {
-        2: "Liste de présence – MDP",
-        4: "Liste de présence – Réunion en ligne",
-        5: "Liste de présence – Réunion des jeunes",
-        6: "Liste de présence – Culte du dimanche"
-    }
-    titre = titres.get(jour, "Liste de présence de Bloom")
+def afficher_liste(titre, noms, symbole):
+    st.subheader(titre)
+    texte = "\n".join(f"{symbole} {n}" for n in sorted(noms)) if noms else "Aucun"
+    st.text_area("", texte, height=180, key=titre)
 
-    # ======================
-    # AFFICHAGE PRINCIPAL
-    # ======================
-    st.markdown(f"<h1 style='color:orange'>{titre}</h1>", unsafe_allow_html=True)
-    st.markdown(
-        f"<p style='color:white'>Date : {date.today().strftime('%d/%m/%Y')}</p>",
-        unsafe_allow_html=True
-    )
-    st.markdown(
-        "<p style='color:orange;font-weight:bold'>"
-        "Écrivez ici le nom des présents aujourd’hui (un par ligne)"
-        "</p>",
-        unsafe_allow_html=True
-    )
+# ======================
+# BASE DE DONNÉES
+# ======================
+conn = sqlite3.connect("presence.db", check_same_thread=False)
+cursor = conn.cursor()
 
-    st.text_area("", height=180, key="saisie")
+cursor.execute("CREATE TABLE IF NOT EXISTS filles (id INTEGER PRIMARY KEY, nom TEXT UNIQUE)")
+cursor.execute("CREATE TABLE IF NOT EXISTS garcons (id INTEGER PRIMARY KEY, nom TEXT UNIQUE)")
+cursor.execute("CREATE TABLE IF NOT EXISTS coachs (id INTEGER PRIMARY KEY, nom TEXT UNIQUE)")
+conn.commit()
 
-    c1, c2 = st.columns(2)
-    valider = c1.button("Valider")
-    reset = c2.button("Réinitialiser")
+# ======================
+# DONNÉES
+# ======================
+filles = [
+    "danielle","camille","charis","chrismaëlla","sarah","helena",
+    "joëlle","kenza","leila","maïva","mariska","sainte","angèle",
+    "melea","ketlyn","romaine","dalhia","holy","ana","josé"
+]
 
-    if reset:
-        st.session_state.saisie = ""
+garcons = [
+    "jhosue","iknan","ighal","patrick","jeremie darlick","jeremie",
+    "alain emmanuel","arthur","nathan","stephen","yvan"
+]
 
-    # ======================
-    # TRAITEMENT
-    # ======================
-    if valider:
+coachs = ["noelvine","jean junior","valérie","aurel"]
 
-        def clean(n):
-            return n.strip().capitalize()
+for n in filles:
+    cursor.execute("INSERT OR IGNORE INTO filles (nom) VALUES (?)", (n,))
+for n in garcons:
+    cursor.execute("INSERT OR IGNORE INTO garcons (nom) VALUES (?)", (n,))
+for n in coachs:
+    cursor.execute("INSERT OR IGNORE INTO coachs (nom) VALUES (?)", (n,))
+conn.commit()
 
-        presents = {
-            clean(n)
-            for n in st.session_state.saisie.split("\n")
-            if n.strip()
-        }
+# ======================
+# APPLICATION
+# ======================
+st.title("Liste de présence de Bloom")
+st.write("Date :", date.today().strftime("%d/%m/%Y"))
 
-        # PRÉSENTS PAR GROUPE
-        filles_p = filles & presents
-        garcons_p = garcons & presents
-        coachs_p = coachs & presents
+st.markdown("### Écrivez ici le nom des présents aujourd’hui")
+st.text_area("", height=180, key="noms_input")
 
-        # ABSENTS (LOGIQUE CORRECTE)
-        filles_abs = filles - filles_p
-        garcons_abs = garcons - garcons_p
-        coachs_abs = coachs - coachs_p
+valider = st.button("Valider")
+reset = st.button("Réinitialiser")
 
-        # ======================
-        # LISTE COPIABLE
-        # ======================
-        texte = (
-            f"{titre}\n"
-            f"Date : {date.today().strftime('%d/%m/%Y')}\n\n"
-            "PRÉSENTS\n"
-        )
+if reset:
+    st.session_state.noms_input = ""
+    st.rerun()
 
-        texte += "\n".join(f"🟢 {n}" for n in sorted(presents)) if presents else "Aucun"
+# ======================
+# TRAITEMENT AVANCÉ
+# ======================
+if valider:
+    entrees = [n.strip() for n in st.session_state.noms_input.splitlines() if n.strip()]
 
-        texte += "\n\nABSENTS\n"
-        texte += "\n".join(
-            f"🔴 {n}" for n in sorted(filles_abs | garcons_abs)
-        ) if (filles_abs or garcons_abs) else "Aucun"
+    cursor.execute("SELECT nom FROM filles")
+    toutes_filles = [r[0] for r in cursor.fetchall()]
+    cursor.execute("SELECT nom FROM garcons")
+    tous_garcons = [r[0] for r in cursor.fetchall()]
+    cursor.execute("SELECT nom FROM coachs")
+    tous_coachs = [r[0] for r in cursor.fetchall()]
 
-        texte += "\n\nABSENTS COACHS\n"
-        texte += "\n".join(f"🔴 {n}" for n in sorted(coachs_abs)) if coachs_abs else "Aucun"
+    filles_p, garcons_p, coachs_p = set(), set(), set()
 
-        texte += (
-            "\n\nTOTAUX PRÉSENTS\n"
-            f"Filles : {len(filles_p)}\n"
-            f"Garçons : {len(garcons_p)}"
-        )
+    # ---- RECONNAISSANCE ROBUSTE ----
+    for e in entrees:
+        if (r := trouver_nom(e, toutes_filles)):
+            filles_p.add(capitaliser(r))
+        elif (r := trouver_nom(e, tous_garcons)):
+            garcons_p.add(capitaliser(r))
+        elif (r := trouver_nom(e, tous_coachs)):
+            coachs_p.add(capitaliser(r))
 
-        st.text_area("Liste finale (copiable)", texte, height=450)
+    # ---- CALCUL DES ABSENTS ----
+    filles_p_norm = {normaliser(n) for n in filles_p}
+    garcons_p_norm = {normaliser(n) for n in garcons_p}
+    coachs_p_norm = {normaliser(n) for n in coachs_p}
+
+    filles_a = {capitaliser(n) for n in toutes_filles if normaliser(n) not in filles_p_norm}
+    garcons_a = {capitaliser(n) for n in tous_garcons if normaliser(n) not in garcons_p_norm}
+    coachs_a = {capitaliser(n) for n in tous_coachs if normaliser(n) not in coachs_p_norm}
+
+    # ---- AFFICHAGE DES LISTES ----
+    st.markdown("## Résultats")
+
+    afficher_liste("Filles présentes", filles_p, "✓")
+    afficher_liste("Filles absentes", filles_a, "✗")
+
+    afficher_liste("Garçons présents", garcons_p, "✓")
+    afficher_liste("Garçons absents", garcons_a, "✗")
+
+    afficher_liste("Coachs présents", coachs_p, "✓")
+    afficher_liste("Coachs absents", coachs_a, "✗")
