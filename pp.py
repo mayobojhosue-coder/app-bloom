@@ -9,19 +9,28 @@ import difflib
 # ======================
 st.set_page_config(page_title="Bloom - Présence", layout="wide")
 
-# ======================
-# SESSION
-# ======================
 if "show_app" not in st.session_state:
     st.session_state.show_app = False
 if "noms_input" not in st.session_state:
     st.session_state.noms_input = ""
 
 # ======================
-# STYLE
+# STYLE GLOBAL
 # ======================
 st.markdown("""
 <style>
+/* Fond page dégradé vert → émeraude */
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(to bottom, #a8e6cf, #009874);
+    color: #fff;
+}
+
+/* Titres en jaune */
+h1, h2, h3, .css-1v3fvcr h2, .css-1v3fvcr h3, .subheader {
+    color: #FFD700 !important;
+}
+
+/* Zone de bienvenue */
 .welcome {
     background-color: black;
     color: white;
@@ -31,6 +40,12 @@ st.markdown("""
     align-items: center;
     font-size: 38px;
     font-weight: bold;
+}
+
+/* Textarea standard pour lisibilité */
+textarea {
+    background-color: #f5f5f5 !important;
+    color: #000 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -65,11 +80,6 @@ def trouver_nom(entree, base):
     if proche:
         return base_norm[proche[0]]
     return None
-
-def afficher_liste(titre, noms, symbole):
-    st.subheader(titre)
-    texte = "\n".join(f"{symbole} {n}" for n in sorted(noms)) if noms else "Aucun"
-    st.text_area("", texte, height=180, key=titre)
 
 # ======================
 # BASE DE DONNÉES
@@ -155,14 +165,35 @@ if valider:
     garcons_a = {capitaliser(n) for n in tous_garcons if normaliser(n) not in garcons_p_norm}
     coachs_a = {capitaliser(n) for n in tous_coachs if normaliser(n) not in coachs_p_norm}
 
-    # ---- AFFICHAGE DES LISTES ----
-    st.markdown("## Résultats")
+    # ---- COMBINAISON EN UNE SEULE LISTE COPIABLE ----
+    texte_final = []
 
-    afficher_liste("Filles présentes", filles_p, "✓")
-    afficher_liste("Filles absentes", filles_a, "✗")
+    if filles_p:
+        texte_final.append("🌸 Filles présentes:")
+        for n in sorted(filles_p):
+            texte_final.append(f"✓ {n}")
+    if filles_a:
+        texte_final.append("🌸 Filles absentes:")
+        for n in sorted(filles_a):
+            texte_final.append(f"✗ {n}")
 
-    afficher_liste("Garçons présents", garcons_p, "✓")
-    afficher_liste("Garçons absents", garcons_a, "✗")
+    if garcons_p:
+        texte_final.append("👦 Garçons présents:")
+        for n in sorted(garcons_p):
+            texte_final.append(f"✓ {n}")
+    if garcons_a:
+        texte_final.append("👦 Garçons absents:")
+        for n in sorted(garcons_a):
+            texte_final.append(f"✗ {n}")
 
-    afficher_liste("Coachs présents", coachs_p, "✓")
-    afficher_liste("Coachs absents", coachs_a, "✗")
+    if coachs_p:
+        texte_final.append("🏆 Coachs présents:")
+        for n in sorted(coachs_p):
+            texte_final.append(f"✓ {n}")
+    if coachs_a:
+        texte_final.append("🏆 Coachs absents:")
+        for n in sorted(coachs_a):
+            texte_final.append(f"✗ {n}")
+
+    st.markdown("## Liste complète copiables (présents et absents)")
+    st.text_area("", "\n".join(texte_final), height=500, key="liste_complete")
