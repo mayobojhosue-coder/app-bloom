@@ -19,9 +19,9 @@ if "noms_input" not in st.session_state:
 # ======================
 st.markdown("""
 <style>
-/* Fond page dégradé vert → émeraude */
+/* Fond page vert forêt uniforme */
 [data-testid="stAppViewContainer"] {
-    background: linear-gradient(to bottom, #a8e6cf, #009874);
+    background-color: #228B22; /* Vert forêt */
     color: #fff;
 }
 
@@ -54,7 +54,7 @@ textarea {
 # BIENVENUE
 # ======================
 if not st.session_state.show_app:
-    st.markdown("<div class='welcome'>🌸 Bienvenue sur l’app Bloom</div>", unsafe_allow_html=True)
+    st.markdown("<div class='welcome'>Bienvenue sur l’app Bloom</div>", unsafe_allow_html=True)
     if st.button("Entrer"):
         st.session_state.show_app = True
         st.rerun()
@@ -133,7 +133,7 @@ if reset:
     st.rerun()
 
 # ======================
-# TRAITEMENT AVANCÉ
+# TRAITEMENT
 # ======================
 if valider:
     entrees = [n.strip() for n in st.session_state.noms_input.splitlines() if n.strip()]
@@ -147,7 +147,6 @@ if valider:
 
     filles_p, garcons_p, coachs_p = set(), set(), set()
 
-    # ---- RECONNAISSANCE ROBUSTE ----
     for e in entrees:
         if (r := trouver_nom(e, toutes_filles)):
             filles_p.add(capitaliser(r))
@@ -156,7 +155,7 @@ if valider:
         elif (r := trouver_nom(e, tous_coachs)):
             coachs_p.add(capitaliser(r))
 
-    # ---- CALCUL DES ABSENTS ----
+    # Calcul des absents
     filles_p_norm = {normaliser(n) for n in filles_p}
     garcons_p_norm = {normaliser(n) for n in garcons_p}
     coachs_p_norm = {normaliser(n) for n in coachs_p}
@@ -165,35 +164,58 @@ if valider:
     garcons_a = {capitaliser(n) for n in tous_garcons if normaliser(n) not in garcons_p_norm}
     coachs_a = {capitaliser(n) for n in tous_coachs if normaliser(n) not in coachs_p_norm}
 
-    # ---- COMBINAISON EN UNE SEULE LISTE COPIABLE ----
+    # Compteurs
+    total_filles_p = len(filles_p)
+    total_filles_a = len(filles_a)
+    total_garcons_p = len(garcons_p)
+    total_garcons_a = len(garcons_a)
+    total_coachs_p = len(coachs_p)
+    total_coachs_a = len(coachs_a)
+    total_p = total_filles_p + total_garcons_p + total_coachs_p
+    total_a = total_filles_a + total_garcons_a + total_coachs_a
+
+    # Liste copiables avec couleurs et totaux
     texte_final = []
 
+    texte_final.append(f"<b>📊 Totaux :</b>")
+    texte_final.append(f"Filles : {total_filles_p} présentes / {total_filles_a} absentes")
+    texte_final.append(f"Garçons : {total_garcons_p} présents / {total_garcons_a} absents")
+    texte_final.append(f"Coachs : {total_coachs_p} présents / {total_coachs_a} absents")
+    texte_final.append(f"Total général : {total_p} présents / {total_a} absents")
+    texte_final.append("<br>")  # séparateur
+
+    def color_text(symbole, nom):
+        if symbole == "✓":
+            return f"<span style='color:green;font-weight:bold'>{symbole} {nom}</span>"
+        else:
+            return f"<span style='color:red;font-weight:bold'>{symbole} {nom}</span>"
+
     if filles_p:
-        texte_final.append("🌸 Filles présentes:")
+        texte_final.append("<b>Filles présentes:</b>")
         for n in sorted(filles_p):
-            texte_final.append(f"✓ {n}")
+            texte_final.append(color_text("✓", n))
     if filles_a:
-        texte_final.append("🌸 Filles absentes:")
+        texte_final.append("<b>Filles absentes:</b>")
         for n in sorted(filles_a):
-            texte_final.append(f"✗ {n}")
+            texte_final.append(color_text("✗", n))
 
     if garcons_p:
-        texte_final.append("👦 Garçons présents:")
+        texte_final.append("<b>Garçons présents:</b>")
         for n in sorted(garcons_p):
-            texte_final.append(f"✓ {n}")
+            texte_final.append(color_text("✓", n))
     if garcons_a:
-        texte_final.append("👦 Garçons absents:")
+        texte_final.append("<b>Garçons absents:</b>")
         for n in sorted(garcons_a):
-            texte_final.append(f"✗ {n}")
+            texte_final.append(color_text("✗", n))
 
     if coachs_p:
-        texte_final.append("🏆 Coachs présents:")
+        texte_final.append("<b>Coachs présents:</b>")
         for n in sorted(coachs_p):
-            texte_final.append(f"✓ {n}")
+            texte_final.append(color_text("✓", n))
     if coachs_a:
-        texte_final.append("🏆 Coachs absents:")
+        texte_final.append("<b>Coachs absents:</b>")
         for n in sorted(coachs_a):
-            texte_final.append(f"✗ {n}")
+            texte_final.append(color_text("✗", n))
 
     st.markdown("## Liste complète copiables (présents et absents)")
-    st.text_area("", "\n".join(texte_final), height=500, key="liste_complete")
+    st.markdown("<br>".join(texte_final), unsafe_allow_html=True)
