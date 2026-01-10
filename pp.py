@@ -174,9 +174,10 @@ if valider:
     total_p = total_filles_p + total_garcons_p + total_coachs_p
     total_a = total_filles_a + total_garcons_a + total_coachs_a
 
-    # Liste copiables avec couleurs et totaux
+    # Liste copiables avec couleurs uniquement sur ✓ et ✗
     texte_final = []
 
+    # Totaux en début
     texte_final.append(f"<b>📊 Totaux :</b>")
     texte_final.append(f"Filles : {total_filles_p} présentes / {total_filles_a} absentes")
     texte_final.append(f"Garçons : {total_garcons_p} présents / {total_garcons_a} absents")
@@ -184,38 +185,38 @@ if valider:
     texte_final.append(f"Total général : {total_p} présents / {total_a} absents")
     texte_final.append("<br>")  # séparateur
 
-    def color_text(symbole, nom):
+    def color_symbole(symbole):
         if symbole == "✓":
-            return f"<span style='color:green;font-weight:bold'>{symbole} {nom}</span>"
+            return f"<span style='color:green;font-weight:bold'>{symbole}</span>"
         else:
-            return f"<span style='color:red;font-weight:bold'>{symbole} {nom}</span>"
+            return f"<span style='color:red;font-weight:bold'>{symbole}</span>"
 
     if filles_p:
         texte_final.append("<b>Filles présentes:</b>")
         for n in sorted(filles_p):
-            texte_final.append(color_text("✓", n))
+            texte_final.append(f"{color_symbole('✓')} {n}")
     if filles_a:
         texte_final.append("<b>Filles absentes:</b>")
         for n in sorted(filles_a):
-            texte_final.append(color_text("✗", n))
+            texte_final.append(f"{color_symbole('✗')} {n}")
 
     if garcons_p:
         texte_final.append("<b>Garçons présents:</b>")
         for n in sorted(garcons_p):
-            texte_final.append(color_text("✓", n))
+            texte_final.append(f"{color_symbole('✓')} {n}")
     if garcons_a:
         texte_final.append("<b>Garçons absents:</b>")
         for n in sorted(garcons_a):
-            texte_final.append(color_text("✗", n))
+            texte_final.append(f"{color_symbole('✗')} {n}")
 
     if coachs_p:
         texte_final.append("<b>Coachs présents:</b>")
         for n in sorted(coachs_p):
-            texte_final.append(color_text("✓", n))
+            texte_final.append(f"{color_symbole('✓')} {n}")
     if coachs_a:
         texte_final.append("<b>Coachs absents:</b>")
         for n in sorted(coachs_a):
-            texte_final.append(color_text("✗", n))
+            texte_final.append(f"{color_symbole('✗')} {n}")
 
     st.markdown("## Liste complète copiables (présents et absents)")
     st.markdown("<br>".join(texte_final), unsafe_allow_html=True)
