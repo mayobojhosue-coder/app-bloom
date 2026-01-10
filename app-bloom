@@ -75,12 +75,7 @@ def trouver_nom(entree, base):
 def afficher_liste(titre, noms, symbole):
     st.subheader(titre)
     texte = "\n".join(f"{symbole} {n}" for n in sorted(noms)) if noms else "Aucun"
-    st.text_area(
-        "",
-        texte,
-        height=160,
-        key=titre
-    )
+    st.text_area("", texte, height=160, key=titre)
 
 # ======================
 # BASE DE DONNÉES
@@ -94,17 +89,17 @@ cursor.execute("CREATE TABLE IF NOT EXISTS coachs (id INTEGER PRIMARY KEY, nom T
 conn.commit()
 
 # ======================
-# DONNÉES
+# DONNÉES (CORRIGÉES)
 # ======================
 filles = [
-    "angèle","camille","helena","joëlle","josée","julyahana","ketlyn",
-    "maïva","mariska","romaine","méléa","kenza","ketsia","chrismaëlla",
-    "jade","daliah"
+    "danielle","camille","charis","chrismaëlla","sarah","helena",
+    "joëlle","kenza","leila","maïva","mariska","sainte","angèle",
+    "melea","ketlyn","romaine","dalhia","holy","ana","josé"
 ]
 
 garcons = [
-    "arthur","alain emmanuel","jhosue","stephen","darlick",
-    "jéremie","iknan","ighal","yvan","evans","andré","karl emmanuel"
+    "jhosue","iknan","ighal","patrick","jeremie darlick","jeremie",
+    "alain emmanuel","arthur","nathan","stephen","yvan"
 ]
 
 coachs = ["noelvine","jean junior","valérie","aurel"]
@@ -162,9 +157,15 @@ if valider:
         elif (r := trouver_nom(e, tous_coachs)):
             coachs_p.add(capitaliser(r))
 
-    filles_a = {capitaliser(n) for n in toutes_filles} - filles_p
-    garcons_a = {capitaliser(n) for n in tous_garcons} - garcons_p
-    coachs_a = {capitaliser(n) for n in tous_coachs} - coachs_p
+    # ===== CORRECTION DU BUG ABSENTS =====
+    filles_p_norm = {normaliser(n) for n in filles_p}
+    garcons_p_norm = {normaliser(n) for n in garcons_p}
+    coachs_p_norm = {normaliser(n) for n in coachs_p}
+
+    filles_a = {capitaliser(n) for n in toutes_filles if normaliser(n) not in filles_p_norm}
+    garcons_a = {capitaliser(n) for n in tous_garcons if normaliser(n) not in garcons_p_norm}
+    coachs_a = {capitaliser(n) for n in tous_coachs if normaliser(n) not in coachs_p_norm}
+    # ===================================
 
     st.markdown("## Résultats")
 
