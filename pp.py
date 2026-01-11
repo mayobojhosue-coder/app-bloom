@@ -19,18 +19,13 @@ if "noms_input" not in st.session_state:
 # ======================
 st.markdown("""
 <style>
-/* Fond page vert forêt uniforme */
 [data-testid="stAppViewContainer"] {
     background-color: #228B22; /* Vert forêt */
     color: #fff;
 }
-
-/* Titres en jaune */
 h1, h2, h3, .css-1v3fvcr h2, .css-1v3fvcr h3, .subheader {
     color: #FFD700 !important;
 }
-
-/* Zone de bienvenue */
 .welcome {
     background-color: black;
     color: white;
@@ -41,8 +36,6 @@ h1, h2, h3, .css-1v3fvcr h2, .css-1v3fvcr h3, .subheader {
     font-size: 38px;
     font-weight: bold;
 }
-
-/* Textarea standard pour lisibilité */
 textarea {
     background-color: #f5f5f5 !important;
     color: #000 !important;
@@ -98,7 +91,7 @@ conn.commit()
 filles = [
     "danielle","camille","charis","chrismaëlla","sarah","helena",
     "joëlle","kenza","leila","maïva","mariska","sainte","angèle",
-    "melea","ketlyn","romaine","dalhia","holy","ana","josé"
+    "méléa","ketlyn","romaine","dalhia","holy","ana","josé"
 ]
 
 garcons = [
@@ -117,11 +110,24 @@ for n in coachs:
 conn.commit()
 
 # ======================
-# APPLICATION
+# TITRE SELON JOUR
 # ======================
-st.title("Liste de présence de Bloom")
+jours = {
+    0: "", 1: "", 2: "",  # lundi, mardi
+    3: "Mercredi – Liste de présence MDP",         # mercredi
+    5: "Samedi – Liste de présence Réunion des jeunes",  # samedi
+    6: "Dimanche – Liste de présence Culte du dimanche"   # dimanche
+}
+
+jour_semaine = date.today().weekday()  # lundi=0, dimanche=6
+titre_jour = jours.get(jour_semaine, "Liste de présence")
+
+st.title(titre_jour)
 st.write("Date :", date.today().strftime("%d/%m/%Y"))
 
+# ======================
+# ZONE DE SAISIE
+# ======================
 st.markdown("### Écrivez ici le nom des présents aujourd’hui")
 st.text_area("", height=180, key="noms_input")
 
@@ -174,16 +180,23 @@ if valider:
     total_p = total_filles_p + total_garcons_p + total_coachs_p
     total_a = total_filles_a + total_garcons_a + total_coachs_a
 
-    # Liste copiables avec couleurs uniquement sur ✓ et ✗
+    # ======================
+    # LISTE COPIABLE
+    # ======================
     texte_final = []
 
-    # Totaux en début
+    # TITRE DU JOUR dans la liste copiables
+    texte_final.append(f"<b>{titre_jour}</b>")
+    texte_final.append(f"Date : {date.today().strftime('%d/%m/%Y')}")
+    texte_final.append("<br>")
+
+    # Totaux
     texte_final.append(f"<b>📊 Totaux :</b>")
     texte_final.append(f"Filles : {total_filles_p} présentes / {total_filles_a} absentes")
     texte_final.append(f"Garçons : {total_garcons_p} présents / {total_garcons_a} absents")
     texte_final.append(f"Coachs : {total_coachs_p} présents / {total_coachs_a} absents")
     texte_final.append(f"Total général : {total_p} présents / {total_a} absents")
-    texte_final.append("<br>")  # séparateur
+    texte_final.append("<br>")
 
     def color_symbole(symbole):
         if symbole == "✓":
@@ -191,28 +204,21 @@ if valider:
         else:
             return f"<span style='color:red;font-weight:bold'>{symbole}</span>"
 
-    if filles_p:
-        texte_final.append("<b>Filles présentes:</b>")
-        for n in sorted(filles_p):
+    # Présents (filles + garçons)
+    presents = sorted(filles_p.union(garcons_p))
+    if presents:
+        texte_final.append("<b>Présents:</b>")
+        for n in presents:
             texte_final.append(f"{color_symbole('✓')} {n}")
-    if filles_a:
-        texte_final.append("<b>Filles absentes:</b>")
-        for n in sorted(filles_a):
+
+    # Absents (filles + garçons)
+    absents = sorted(filles_a.union(garcons_a))
+    if absents:
+        texte_final.append("<b>Absents:</b>")
+        for n in absents:
             texte_final.append(f"{color_symbole('✗')} {n}")
 
-    if garcons_p:
-        texte_final.append("<b>Garçons présents:</b>")
-        for n in sorted(garcons_p):
-            texte_final.append(f"{color_symbole('✓')} {n}")
-    if garcons_a:
-        texte_final.append("<b>Garçons absents:</b>")
-        for n in sorted(garcons_a):
-            texte_final.append(f"{color_symbole('✗')} {n}")
-
-    if coachs_p:
-        texte_final.append("<b>Coachs présents:</b>")
-        for n in sorted(coachs_p):
-            texte_final.append(f"{color_symbole('✓')} {n}")
+    # Coachs absents
     if coachs_a:
         texte_final.append("<b>Coachs absents:</b>")
         for n in sorted(coachs_a):
