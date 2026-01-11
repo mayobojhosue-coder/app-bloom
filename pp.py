@@ -21,11 +21,11 @@ if "noms_input" not in st.session_state:
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
-    background-color: #228B22; /* Vert forêt */
+    background-color: #006D66; /* Vert bleu profond comme ton image */
     color: #fff;
 }
 h1, h2, h3, .css-1v3fvcr h2, .css-1v3fvcr h3, .subheader {
-    color: #FFD700 !important;
+    color: #FFD700 !important; /* Titres jaunes */
 }
 .welcome {
     background-color: black;
@@ -41,11 +41,20 @@ textarea {
     background-color: #f5f5f5 !important;
     color: #000 !important;
 }
+button {
+    background-color: #FFD700;
+    color: #000;
+    border: none;
+    padding: 8px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ======================
-# BIENVENUE
+# PAGE DE BIENVENUE
 # ======================
 if not st.session_state.show_app:
     st.markdown("<div class='welcome'>Bienvenue sur l’app Bloom</div>", unsafe_allow_html=True)
@@ -55,7 +64,7 @@ if not st.session_state.show_app:
     st.stop()
 
 # ======================
-# FONCTIONS
+# FONCTIONS UTILES
 # ======================
 def normaliser(txt):
     txt = txt.lower()
@@ -86,9 +95,6 @@ cursor.execute("CREATE TABLE IF NOT EXISTS garcons (id INTEGER PRIMARY KEY, nom 
 cursor.execute("CREATE TABLE IF NOT EXISTS coachs (id INTEGER PRIMARY KEY, nom TEXT UNIQUE)")
 conn.commit()
 
-# ======================
-# DONNÉES
-# ======================
 filles = [
     "danielle","camille","charis","chrismaëlla","sarah","helena",
     "joëlle","kenza","leila","maïva","mariska","sainte","angèle",
@@ -114,13 +120,11 @@ conn.commit()
 # TITRE SELON JOUR
 # ======================
 jours = {
-    0: "", 1: "", 2: "",  # lundi, mardi
-    3: "Mercredi – Liste de présence MDP",         # mercredi
-    5: "Samedi – Liste de présence Réunion des jeunes",  # samedi
-    6: "Dimanche – Liste de présence Culte du dimanche"   # dimanche
+    3: "Mercredi – Liste de présence MDP",
+    5: "Samedi – Liste de présence Réunion des jeunes",
+    6: "Dimanche – Liste de présence Culte du dimanche"
 }
-
-jour_semaine = date.today().weekday()  # lundi=0, dimanche=6
+jour_semaine = date.today().weekday()
 titre_jour = jours.get(jour_semaine, "Liste de présence")
 
 st.title(titre_jour)
@@ -134,13 +138,12 @@ st.text_area("", height=180, key="noms_input")
 
 valider = st.button("Valider")
 reset = st.button("Réinitialiser")
-
 if reset:
     st.session_state.noms_input = ""
     st.rerun()
 
 # ======================
-# TRAITEMENT
+# TRAITEMENT DES NOMS
 # ======================
 if valider:
     entrees = [n.strip() for n in st.session_state.noms_input.splitlines() if n.strip()]
@@ -153,7 +156,6 @@ if valider:
     tous_coachs = [r[0] for r in cursor.fetchall()]
 
     filles_p, garcons_p, coachs_p = set(), set(), set()
-
     for e in entrees:
         if (r := trouver_nom(e, toutes_filles)):
             filles_p.add(capitaliser(r))
@@ -162,7 +164,7 @@ if valider:
         elif (r := trouver_nom(e, tous_coachs)):
             coachs_p.add(capitaliser(r))
 
-    # Calcul des absents
+    # Calcul absents
     filles_p_norm = {normaliser(n) for n in filles_p}
     garcons_p_norm = {normaliser(n) for n in garcons_p}
     coachs_p_norm = {normaliser(n) for n in coachs_p}
@@ -171,7 +173,7 @@ if valider:
     garcons_a = {capitaliser(n) for n in tous_garcons if normaliser(n) not in garcons_p_norm}
     coachs_a = {capitaliser(n) for n in tous_coachs if normaliser(n) not in coachs_p_norm}
 
-    # Compteurs
+    # Totaux
     total_filles_p = len(filles_p)
     total_filles_a = len(filles_a)
     total_garcons_p = len(garcons_p)
@@ -186,7 +188,6 @@ if valider:
     # ======================
     liste_copiable = []
 
-    # TITRE DU JOUR
     liste_copiable.append(f"{titre_jour}")
     liste_copiable.append(f"Date : {date.today().strftime('%d/%m/%Y')}")
     liste_copiable.append("")
@@ -228,7 +229,6 @@ if valider:
     # ======================
     st.markdown("## Liste complète copiables (présents et absents)")
 
-    # Bouton copier avec JS
     copy_html = f"""
     <textarea id="listeCopiable" style="width:100%;height:400px;">{texte_final}</textarea>
     <br>
