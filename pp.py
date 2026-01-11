@@ -3,6 +3,7 @@ import sqlite3
 from datetime import date
 import unicodedata
 import difflib
+import streamlit.components.v1 as components
 
 # ======================
 # CONFIG
@@ -190,15 +191,12 @@ if valider:
     liste_copiable.append(f"Date : {date.today().strftime('%d/%m/%Y')}")
     liste_copiable.append("")
 
-    def color(sym):
-        return "✓" if sym == "✓" else "✗"  # affichage simple dans textarea
-
     # Présents
     presents = sorted(filles_p.union(garcons_p))
     if presents:
         liste_copiable.append("Présents:")
         for n in presents:
-            liste_copiable.append(f"{color('✓')} {n}")
+            liste_copiable.append(f"✓ {n}")
         liste_copiable.append("")
 
     # Absents
@@ -206,14 +204,14 @@ if valider:
     if absents:
         liste_copiable.append("Absents:")
         for n in absents:
-            liste_copiable.append(f"{color('✗')} {n}")
+            liste_copiable.append(f"✗ {n}")
         liste_copiable.append("")
 
     # Coachs absents
     if coachs_a:
         liste_copiable.append("Coachs absents:")
         for n in sorted(coachs_a):
-            liste_copiable.append(f"{color('✗')} {n}")
+            liste_copiable.append(f"✗ {n}")
         liste_copiable.append("")
 
     # Totaux à la fin
@@ -223,6 +221,17 @@ if valider:
     liste_copiable.append(f"Coachs : {total_coachs_p} présents / {total_coachs_a} absents")
     liste_copiable.append(f"Total général : {total_p} présents / {total_a} absents")
 
-    # Affichage dans textarea
+    texte_final = "\n".join(liste_copiable)
+
+    # ======================
+    # BOUTON COPIER + TEXTAREA
+    # ======================
     st.markdown("## Liste complète copiables (présents et absents)")
-    st.text_area("Copiez la liste ci-dessous :", value="\n".join(liste_copiable), height=400)
+
+    # Bouton copier avec JS
+    copy_html = f"""
+    <textarea id="listeCopiable" style="width:100%;height:400px;">{texte_final}</textarea>
+    <br>
+    <button onclick="navigator.clipboard.writeText(document.getElementById('listeCopiable').value)">Copier la liste</button>
+    """
+    components.html(copy_html, height=450)
