@@ -183,46 +183,46 @@ if valider:
     # ======================
     # LISTE COPIABLE
     # ======================
-    texte_final = []
+    liste_copiable = []
 
-    # TITRE DU JOUR dans la liste copiables
-    texte_final.append(f"<b>{titre_jour}</b>")
-    texte_final.append(f"Date : {date.today().strftime('%d/%m/%Y')}")
-    texte_final.append("<br>")
+    # TITRE DU JOUR
+    liste_copiable.append(f"{titre_jour}")
+    liste_copiable.append(f"Date : {date.today().strftime('%d/%m/%Y')}")
+    liste_copiable.append("")
 
-    # Totaux
-    texte_final.append(f"<b>📊 Totaux :</b>")
-    texte_final.append(f"Filles : {total_filles_p} présentes / {total_filles_a} absentes")
-    texte_final.append(f"Garçons : {total_garcons_p} présents / {total_garcons_a} absents")
-    texte_final.append(f"Coachs : {total_coachs_p} présents / {total_coachs_a} absents")
-    texte_final.append(f"Total général : {total_p} présents / {total_a} absents")
-    texte_final.append("<br>")
+    def color(sym):
+        return "✓" if sym == "✓" else "✗"  # affichage simple dans textarea
 
-    def color_symbole(symbole):
-        if symbole == "✓":
-            return f"<span style='color:green;font-weight:bold'>{symbole}</span>"
-        else:
-            return f"<span style='color:red;font-weight:bold'>{symbole}</span>"
-
-    # Présents (filles + garçons)
+    # Présents
     presents = sorted(filles_p.union(garcons_p))
     if presents:
-        texte_final.append("<b>Présents:</b>")
+        liste_copiable.append("Présents:")
         for n in presents:
-            texte_final.append(f"{color_symbole('✓')} {n}")
+            liste_copiable.append(f"{color('✓')} {n}")
+        liste_copiable.append("")
 
-    # Absents (filles + garçons)
+    # Absents
     absents = sorted(filles_a.union(garcons_a))
     if absents:
-        texte_final.append("<b>Absents:</b>")
+        liste_copiable.append("Absents:")
         for n in absents:
-            texte_final.append(f"{color_symbole('✗')} {n}")
+            liste_copiable.append(f"{color('✗')} {n}")
+        liste_copiable.append("")
 
     # Coachs absents
     if coachs_a:
-        texte_final.append("<b>Coachs absents:</b>")
+        liste_copiable.append("Coachs absents:")
         for n in sorted(coachs_a):
-            texte_final.append(f"{color_symbole('✗')} {n}")
+            liste_copiable.append(f"{color('✗')} {n}")
+        liste_copiable.append("")
 
+    # Totaux à la fin
+    liste_copiable.append("📊 Totaux :")
+    liste_copiable.append(f"Filles : {total_filles_p} présentes / {total_filles_a} absentes")
+    liste_copiable.append(f"Garçons : {total_garcons_p} présents / {total_garcons_a} absents")
+    liste_copiable.append(f"Coachs : {total_coachs_p} présents / {total_coachs_a} absents")
+    liste_copiable.append(f"Total général : {total_p} présents / {total_a} absents")
+
+    # Affichage dans textarea
     st.markdown("## Liste complète copiables (présents et absents)")
-    st.markdown("<br>".join(texte_final), unsafe_allow_html=True)
+    st.text_area("Copiez la liste ci-dessous :", value="\n".join(liste_copiable), height=400)
