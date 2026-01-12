@@ -98,7 +98,7 @@ conn.commit()
 filles = [
     "danielle","camille","charis","chrismaëlla","sarah","helena",
     "joëlle","kenza","leila","maïva","mariska","sainte","angèle",
-    "méléa","ketlyn","romaine","dalhia","holy","ana","josé"
+    "méléa","ketlyn","romaine","daliah","holy","ana","josé"
 ]
 
 garcons = [
@@ -235,3 +235,4 @@ if valider:
     <button onclick="navigator.clipboard.writeText(document.getElementById('listeCopiable').value)">Copier la liste</button>
     """
     components.html(copy_html, height=450)
+
