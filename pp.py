@@ -16,17 +16,15 @@ if "noms_input" not in st.session_state:
     st.session_state.noms_input = ""
 
 # ======================
-# STYLE GLOBAL
+# STYLE
 # ======================
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
-    background-color: #006D66; /* Vert bleu profond comme ton image */
+    background-color: #006D66;
     color: #fff;
 }
-h1, h2, h3, .css-1v3fvcr h2, .css-1v3fvcr h3, .subheader {
-    color: #FFD700 !important; /* Titres jaunes */
-}
+h1, h2, h3 { color: #FFD700 !important; }
 .welcome {
     background-color: black;
     color: white;
@@ -48,13 +46,12 @@ button {
     padding: 8px 16px;
     font-size: 16px;
     font-weight: bold;
-    cursor: pointer;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ======================
-# PAGE DE BIENVENUE
+# ACCUEIL
 # ======================
 if not st.session_state.show_app:
     st.markdown("<div class='welcome'>Bienvenue sur l’app Bloom</div>", unsafe_allow_html=True)
@@ -64,7 +61,7 @@ if not st.session_state.show_app:
     st.stop()
 
 # ======================
-# FONCTIONS UTILES
+# FONCTIONS
 # ======================
 def normaliser(txt):
     txt = txt.lower()
@@ -80,9 +77,7 @@ def trouver_nom(entree, base):
     if e in base_norm:
         return base_norm[e]
     proche = difflib.get_close_matches(e, base_norm.keys(), n=1, cutoff=0.7)
-    if proche:
-        return base_norm[proche[0]]
-    return None
+    return base_norm[proche[0]] if proche else None
 
 # ======================
 # BASE DE DONNÉES
@@ -117,33 +112,33 @@ for n in coachs:
 conn.commit()
 
 # ======================
-# TITRE SELON JOUR
+# TITRE
 # ======================
 jours = {
     3: "Mercredi – Liste de présence MDP",
     5: "Samedi – Liste de présence Réunion des jeunes",
     6: "Dimanche – Liste de présence Culte du dimanche"
 }
-jour_semaine = date.today().weekday()
-titre_jour = jours.get(jour_semaine, "Liste de présence")
+titre_jour = jours.get(date.today().weekday(), "Liste de présence")
 
 st.title(titre_jour)
 st.write("Date :", date.today().strftime("%d/%m/%Y"))
 
 # ======================
-# ZONE DE SAISIE
+# SAISIE
 # ======================
 st.markdown("### Écrivez ici le nom des présents aujourd’hui")
 st.text_area("", height=180, key="noms_input")
 
 valider = st.button("Valider")
 reset = st.button("Réinitialiser")
+
 if reset:
     st.session_state.noms_input = ""
     st.rerun()
 
 # ======================
-# TRAITEMENT DES NOMS
+# TRAITEMENT
 # ======================
 if valider:
     entrees = [n.strip() for n in st.session_state.noms_input.splitlines() if n.strip()]
@@ -156,83 +151,34 @@ if valider:
     tous_coachs = [r[0] for r in cursor.fetchall()]
 
     filles_p, garcons_p, coachs_p = set(), set(), set()
+
     for e in entrees:
-        if (r := trouver_nom(e, toutes_filles)):
+        if r := trouver_nom(e, toutes_filles):
             filles_p.add(capitaliser(r))
-        elif (r := trouver_nom(e, tous_garcons)):
+        elif r := trouver_nom(e, tous_garcons):
             garcons_p.add(capitaliser(r))
-        elif (r := trouver_nom(e, tous_coachs)):
+        elif r := trouver_nom(e, tous_coachs):
             coachs_p.add(capitaliser(r))
 
-    # Calcul absents
-    filles_p_norm = {normaliser(n) for n in filles_p}
-    garcons_p_norm = {normaliser(n) for n in garcons_p}
-    coachs_p_norm = {normaliser(n) for n in coachs_p}
+    filles_a = {capitaliser(n) for n in toutes_filles if capitaliser(n) not in filles_p}
+    garcons_a = {capitaliser(n) for n in tous_garcons if capitaliser(n) not in garcons_p}
+    coachs_a = {capitaliser(n) for n in tous_coachs if capitaliser(n) not in coachs_p}
 
-    filles_a = {capitaliser(n) for n in toutes_filles if normaliser(n) not in filles_p_norm}
-    garcons_a = {capitaliser(n) for n in tous_garcons if normaliser(n) not in garcons_p_norm}
-    coachs_a = {capitaliser(n) for n in tous_coachs if normaliser(n) not in coachs_p_norm}
+    presents = sorted(filles_p | garcons_p | coachs_p)
+    absents = sorted(filles_a | garcons_a | coachs_a)
 
-    # Totaux
-    total_filles_p = len(filles_p)
-    total_filles_a = len(filles_a)
-    total_garcons_p = len(garcons_p)
-    total_garcons_a = len(garcons_a)
-    total_coachs_p = len(coachs_p)
-    total_coachs_a = len(coachs_a)
-    total_p = total_filles_p + total_garcons_p + total_coachs_p
-    total_a = total_filles_a + total_garcons_a + total_coachs_a
+    texte_final = "\n".join(
+        [titre_jour, f"Date : {date.today().strftime('%d/%m/%Y')}", "",
+         "Présents:"] +
+        [f"✓ {n}" for n in presents] + ["", "Absents:"] +
+        [f"✗ {n}" for n in absents]
+    )
 
-    # ======================
-    # LISTE COPIABLE
-    # ======================
-    liste_copiable = []
-
-    liste_copiable.append(f"{titre_jour}")
-    liste_copiable.append(f"Date : {date.today().strftime('%d/%m/%Y')}")
-    liste_copiable.append("")
-
-    # Présents
-    presents = sorted(filles_p.union(garcons_p))
-    if presents:
-        liste_copiable.append("Présents:")
-        for n in presents:
-            liste_copiable.append(f"✓ {n}")
-        liste_copiable.append("")
-
-    # Absents
-    absents = sorted(filles_a.union(garcons_a))
-    if absents:
-        liste_copiable.append("Absents:")
-        for n in absents:
-            liste_copiable.append(f"✗ {n}")
-        liste_copiable.append("")
-
-    # Coachs absents
-    if coachs_a:
-        liste_copiable.append("Coachs absents:")
-        for n in sorted(coachs_a):
-            liste_copiable.append(f"✗ {n}")
-        liste_copiable.append("")
-
-    # Totaux à la fin
-    liste_copiable.append("📊 Totaux :")
-    liste_copiable.append(f"Filles : {total_filles_p} présentes / {total_filles_a} absentes")
-    liste_copiable.append(f"Garçons : {total_garcons_p} présents / {total_garcons_a} absents")
-    liste_copiable.append(f"Coachs : {total_coachs_p} présents / {total_coachs_a} absents")
-    liste_copiable.append(f"Total général : {total_p} présents / {total_a} absents")
-
-    texte_final = "\n".join(liste_copiable)
-
-    # ======================
-    # BOUTON COPIER + TEXTAREA
-    # ======================
-    st.markdown("## Liste complète copiables (présents et absents)")
-
-    copy_html = f"""
-    <textarea id="listeCopiable" style="width:100%;height:400px;">{texte_final}</textarea>
+    st.markdown("## Liste complète copiable")
+    components.html(f"""
+    <textarea style="width:100%;height:400px;">{texte_final}</textarea>
     <br>
-    <button onclick="navigator.clipboard.writeText(document.getElementById('listeCopiable').value)">Copier la liste</button>
-    """
-    components.html(copy_html, height=450)
-
+    <button onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">
+        Copier la liste
+    </button>
+    """, height=450)
