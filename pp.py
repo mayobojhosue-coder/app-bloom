@@ -72,16 +72,32 @@ def normaliser(txt):
 def capitaliser(nom):
     return " ".join(p.capitalize() for p in nom.split())
 
-def trouver_nom(entree, base):
-    base_norm = {normaliser(n): n for n in base}
-    e = normaliser(entree)
-    if e in base_norm:
-        return base_norm[e]
-    proche = difflib.get_close_matches(e, base_norm.keys(), n=1, cutoff=0.7)
-    return base_norm[proche[0]] if proche else None
-
 def afficher_coach(nom):
     return "Coach " + capitaliser(nom)
+
+# Noms sensibles à ne pas confondre
+sensibles = ["jhosue", "josé"]
+
+def trouver_nom(entree, base):
+    """
+    Cherche le nom exact dans la base.
+    Ne confond pas les noms sensibles.
+    Utilise difflib seulement si aucune correspondance exacte.
+    """
+    base_norm = {normaliser(n): n for n in base}
+    e = normaliser(entree)
+
+    # Correspondance exacte
+    if e in base_norm:
+        return base_norm[e]
+
+    # Noms sensibles : correspondance exacte uniquement
+    if e in [normaliser(s) for s in sensibles]:
+        return base_norm.get(e, entree)
+
+    # Correspondance proche pour les autres noms
+    proche = difflib.get_close_matches(e, base_norm.keys(), n=1, cutoff=0.85)
+    return base_norm[proche[0]] if proche else None
 
 # ======================
 # BASE DE DONNÉES
@@ -102,7 +118,7 @@ garcons = ["jhosue","iknan","ighal","patrick","jeremie darlick","jeremie",
 
 coachs = ["noelvine","jean-junior","valérie","aurel"]
 
-# Insertion dans la base (ignore si existe déjà)
+# Insertion dans la base
 for n in filles:
     cursor.execute("INSERT OR IGNORE INTO filles (nom) VALUES (?)", (n,))
 for n in garcons:
@@ -120,7 +136,6 @@ jours = {
     5: "Samedi – Liste de présence Réunion des jeunes",
     6: "Dimanche – Liste de présence Culte"
 }
-
 titre_jour = jours.get(date.today().weekday(), "Liste de présence")
 
 st.title(titre_jour)
