@@ -46,6 +46,7 @@ button {
     padding: 8px 16px;
     font-size: 16px;
     font-weight: bold;
+    cursor:pointer;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -79,6 +80,9 @@ def trouver_nom(entree, base):
     proche = difflib.get_close_matches(e, base_norm.keys(), n=1, cutoff=0.7)
     return base_norm[proche[0]] if proche else None
 
+def afficher_coach(nom):
+    return "Coach " + capitaliser(nom)
+
 # ======================
 # BASE DE DONNÉES
 # ======================
@@ -90,19 +94,15 @@ cursor.execute("CREATE TABLE IF NOT EXISTS garcons (id INTEGER PRIMARY KEY, nom 
 cursor.execute("CREATE TABLE IF NOT EXISTS coachs (id INTEGER PRIMARY KEY, nom TEXT UNIQUE)")
 conn.commit()
 
-filles = [
-    "danielle","camille","charis","chrismaëlla","sarah","helena",
-    "joëlle","kenza","leila","maïva","mariska","sainte","angèle",
-    "méléa","ketlyn","romaine","daliah","holy","ana","josé"
-]
+filles = ["danielle","camille","charis","chrismaëlla","sarah","helena","joëlle","kenza","leila","maïva",
+          "mariska","sainte","angèle","méléa","ketlyn","romaine","daliah","holy","ana","josé"]
 
-garcons = [
-    "jhosue","iknan","ighal","patrick","jeremie darlick","jeremie",
-    "alain emmanuel","arthur","nathan","stephen","yvan"
-]
+garcons = ["jhosue","iknan","ighal","patrick","jeremie darlick","jeremie",
+           "alain emmanuel","arthur","nathan","stephen","yvan"]
 
-coachs = ["noelvine","jean junior","valérie","aurel"]
+coachs = ["noelvine","jean-junior","valérie","aurel"]
 
+# Insertion dans la base (ignore si existe déjà)
 for n in filles:
     cursor.execute("INSERT OR IGNORE INTO filles (nom) VALUES (?)", (n,))
 for n in garcons:
@@ -112,30 +112,43 @@ for n in coachs:
 conn.commit()
 
 # ======================
-# TITRE
+# TITRE SELON JOUR
 # ======================
 jours = {
-    3: "Mercredi – Liste de présence MDP",
+    2: "Mercredi – Liste de présence MDP",
+    4: "Vendredi – Liste de présence Réunion en ligne",
     5: "Samedi – Liste de présence Réunion des jeunes",
-    6: "Dimanche – Liste de présence Culte du dimanche"
+    6: "Dimanche – Liste de présence Culte"
 }
+
 titre_jour = jours.get(date.today().weekday(), "Liste de présence")
 
 st.title(titre_jour)
-st.write("Date :", date.today().strftime("%d/%m/%Y"))
+st.write("📅 Date :", date.today().strftime("%d/%m/%Y"))
 
 # ======================
 # SAISIE
 # ======================
-st.markdown("### Écrivez ici le nom des présents aujourd’hui")
-st.text_area("", height=180, key="noms_input")
+st.markdown("### Écris un nom par ligne")
+st.text_area("", height=200, key="noms_input")
 
-valider = st.button("Valider")
-reset = st.button("Réinitialiser")
+col1, col2 = st.columns(2)
+valider = col1.button("Valider")
+reset = col2.button("Réinitialiser")
 
 if reset:
     st.session_state.noms_input = ""
     st.rerun()
+
+# ======================
+# CORRECTIONS AUTOMATIQUES
+# ======================
+corrections = {
+    "holy": "holly",
+    "ana": "hanna",
+    "hanna": "hanna",
+    "jean junior": "jean-junior"
+}
 
 # ======================
 # TRAITEMENT
@@ -153,32 +166,50 @@ if valider:
     filles_p, garcons_p, coachs_p = set(), set(), set()
 
     for e in entrees:
+        # Filles
         if r := trouver_nom(e, toutes_filles):
+            r = corrections.get(normaliser(r), r)
             filles_p.add(capitaliser(r))
+        # Garçons
         elif r := trouver_nom(e, tous_garcons):
             garcons_p.add(capitaliser(r))
+        # Coachs
         elif r := trouver_nom(e, tous_coachs):
-            coachs_p.add(capitaliser(r))
+            r = corrections.get(normaliser(r), r)
+            coachs_p.add(afficher_coach(r))
 
-    filles_a = {capitaliser(n) for n in toutes_filles if capitaliser(n) not in filles_p}
-    garcons_a = {capitaliser(n) for n in tous_garcons if capitaliser(n) not in garcons_p}
-    coachs_a = {capitaliser(n) for n in tous_coachs if capitaliser(n) not in coachs_p}
+    # ABSENTS
+    filles_a = sorted({corrections.get(normaliser(n), n).capitalize() for n in toutes_filles if capitaliser(corrections.get(normaliser(n), n)) not in filles_p})
+    garcons_a = sorted({capitaliser(n) for n in tous_garcons if capitaliser(n) not in garcons_p})
+    coachs_a = sorted({afficher_coach(n) for n in tous_coachs if afficher_coach(n) not in coachs_p})
 
-    presents = sorted(filles_p | garcons_p | coachs_p)
-    absents = sorted(filles_a | garcons_a | coachs_a)
+    # TEXTE FINAL
+    texte_final = f"""{titre_jour}
+Date : {date.today().strftime('%d/%m/%Y')}
 
-    texte_final = "\n".join(
-        [titre_jour, f"Date : {date.today().strftime('%d/%m/%Y')}", "",
-         "Présents:"] +
-        [f"✓ {n}" for n in presents] + ["", "Absents:"] +
-        [f"✗ {n}" for n in absents]
-    )
+--- PRÉSENTS ---
+""" + "\n".join(f"✓ {n}" for n in sorted(filles_p | garcons_p | coachs_p)) + f"""
 
-    st.markdown("## Liste complète copiable")
+--- ABSENTS ---
+""" + "\n".join(f"✗ {n}" for n in sorted(filles_a + garcons_a)) + f"""
+
+--- COACHS ABSENTS ---
+""" + "\n".join(f"✗ {n}" for n in coachs_a) + f"""
+
+--- TOTAUX ---
+Filles présentes : {len(filles_p)}
+Garçons présents : {len(garcons_p)}
+Coachs présents : {len(coachs_p)}
+
+Total présents : {len(filles_p)+len(garcons_p)+len(coachs_p)}
+"""
+
+    st.markdown("## Liste finale copiable")
+
     components.html(f"""
-    <textarea style="width:100%;height:400px;">{texte_final}</textarea>
-    <br>
-    <button onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">
-        Copier la liste
+    <textarea id="zone" style="width:100%;height:420px;">{texte_final}</textarea>
+    <br><br>
+    <button onclick="navigator.clipboard.writeText(document.getElementById('zone').value)">
+        Copier toute la liste
     </button>
-    """, height=450)
+    """, height=480)
