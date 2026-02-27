@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ajouter Membres</title>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-// 🔹 Configuration Firebase
+/* 🔹 Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyAbLA-0WqBJ3Zj23rjMuVLX6gjuK-QtAOs",
   authDomain: "liste-de-presence-bloom.firebaseapp.com",
@@ -23,15 +24,15 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const membresRef = collection(db, "membres");
 
-// 🔹 Listes locales temporaires
+/* 🔹 Listes locales */
 let filles = [];
 let garcons = [];
 let coachs = [];
 
-// 🔹 Membres en base persistants
+/* 🔹 Base */
 let baseMembres = [];
 
-// 🔹 Ajouter un nom local
+/* 🔹 Ajouter nom */
 function ajouterNom(categorie) {
   const input = document.getElementById(`${categorie}Input`);
   const nom = input.value.trim();
@@ -43,188 +44,164 @@ function ajouterNom(categorie) {
   afficherListeLocal(categorie);
 }
 
-// 🔹 Afficher la liste locale
+/* 🔹 Supprimer un nom local manuellement */
+function supprimerLocal(categorie, index) {
+  if(categorie === "filles") filles.splice(index,1);
+  if(categorie === "garcons") garcons.splice(index,1);
+  if(categorie === "coachs") coachs.splice(index,1);
+  afficherListeLocal(categorie);
+}
+
+/* 🔹 Affichage local AVEC croix */
 function afficherListeLocal(categorie) {
   const ul = document.getElementById(`${categorie}Liste`);
   ul.innerHTML = "";
   const liste = categorie==="filles"?filles:categorie==="garcons"?garcons:coachs;
+
   liste.forEach((nom,i)=>{
     const li = document.createElement("li");
-    li.innerHTML = `${i+1}. ${nom}`;
+    li.innerHTML = `
+      ${i+1}. ${nom}
+      <span onclick="supprimerLocal('${categorie}', ${i})">❌</span>
+    `;
     ul.appendChild(li);
   });
 }
 
-// 🔹 Envoyer toutes les listes locales en base
+/* 🔹 Envoi en base (LES NOMS RESTENT) */
 async function envoyerBase() {
   const allNoms = [
-    ...filles.map(n => ({nom: n, categorie:"Fille"})),
-    ...garcons.map(n => ({nom: n, categorie:"Garçon"})),
-    ...coachs.map(n => ({nom: n, categorie:"Coach"}))
+    ...filles.map(n => ({nom:n, categorie:"Fille"})),
+    ...garcons.map(n => ({nom:n, categorie:"Garçon"})),
+    ...coachs.map(n => ({nom:n, categorie:"Coach"}))
   ];
-  if(allNoms.length===0) return alert("Aucun nom à envoyer !");
-  for(const m of allNoms) {
-    await addDoc(membresRef, m);
-  }
-  filles=[]; garcons=[]; coachs=[];
-  afficherListeLocal("filles"); afficherListeLocal("garcons"); afficherListeLocal("coachs");
-  alert("Tous les noms ont été envoyés en base !");
+  if(allNoms.length === 0) return alert("Aucun nom à envoyer !");
+  for(const m of allNoms) await addDoc(membresRef, m);
+  alert("Noms envoyés en base (ils restent affichés)");
 }
 
-// 🔹 Supprimer un membre de la base
+/* 🔹 Supprimer en base */
 async function supprimerMembre(id) {
   if(!confirm("Supprimer ce membre de la base ?")) return;
   await deleteDoc(doc(db,"membres",id));
 }
 
-// 🔹 Récupération en temps réel de la base
-onSnapshot(membresRef, snapshot => {
+/* 🔹 Lecture base */
+onSnapshot(membresRef, snap=>{
   baseMembres = [];
-  snapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    baseMembres.push({
-      id: docSnap.id,
-      nom: data.nom,
-      categorie: data.categorie || "Membre"
-    });
+  snap.forEach(d=>{
+    const data = d.data();
+    baseMembres.push({id:d.id, nom:data.nom, categorie:data.categorie});
   });
   afficherBaseUnique();
 });
 
-// 🔹 Afficher tous les membres en base dans une seule zone
+/* 🔹 Affichage base */
 function afficherBaseUnique() {
   const ul = document.getElementById("baseListeUnique");
   ul.innerHTML = "";
   baseMembres.forEach((m,i)=>{
     const li = document.createElement("li");
-    li.innerHTML = `${i+1}. ${m.nom} (${m.categorie}) <span onclick="supprimerMembre('${m.id}')">❌</span>`;
+    li.innerHTML = `
+      ${i+1}. ${m.nom} (${m.categorie})
+      <span onclick="supprimerMembre('${m.id}')">❌</span>
+    `;
     ul.appendChild(li);
   });
 }
 
-// 🔹 Aller à la liste de présence
-function allerPresence() {
+/* 🔹 Navigation */
+function allerPresence(){
   window.location.href = "presence.html";
 }
 
 window.ajouterNom = ajouterNom;
 window.envoyerBase = envoyerBase;
+window.supprimerLocal = supprimerLocal;
 window.supprimerMembre = supprimerMembre;
 window.allerPresence = allerPresence;
-
 </script>
 
 <style>
-/* 🌌 Style sombre BLOOM */
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: #121212;
-  color: #eee;
+body{
+  font-family:'Segoe UI',Arial;
+  background:#121212;
+  color:#eee;
   padding:20px;
-  position: relative;
   min-height:100vh;
-  overflow-x: hidden;
+  position:relative;
 }
-
-/* Filigrane BLOOM */
-body::before {
+body::before{
   content:"BLOOM";
-  position: absolute;
-  top:50%; left:50%;
-  transform: translate(-50%,-50%) rotate(-15deg);
-  font-size: 200px;
-  color: rgba(255,255,255,0.05);
-  font-weight: bold;
-  letter-spacing: 20px;
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(-15deg);
+  font-size:200px;
+  color:rgba(255,255,255,.05);
+  letter-spacing:20px;
   pointer-events:none;
-  z-index:0;
 }
-
-h1 { text-align:center; margin-bottom:30px; color:#fff; position:relative; z-index:1; }
-
-section {
-  background: #1e1e1e;
-  border-radius: 15px;
-  padding:15px 20px;
+section{
+  background:#1e1e1e;
+  padding:15px;
+  border-radius:15px;
   margin-bottom:20px;
-  position:relative; z-index:1;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-  transition: transform 0.3s;
 }
-section:hover { transform: translateY(-3px); }
-
-h2 { margin-top:0; color:#fff; }
-
-input[type="text"] {
-  width: 70%;
+input{
+  width:70%;
   padding:10px;
-  border-radius: 8px;
+  border-radius:8px;
   border:none;
-  margin-right:5px;
   background:#2b2b2b;
   color:#fff;
 }
-input[type="text"]::placeholder { color: #aaa; }
-
-button {
+button{
   padding:10px 20px;
   margin:5px;
   border:none;
   border-radius:10px;
   font-weight:bold;
-  cursor:pointer;
+  background:linear-gradient(135deg,#6a0dad,#d147a3);
   color:#fff;
-  background: linear-gradient(135deg,#6a0dad,#d147a3);
-  transition: transform 0.2s, box-shadow 0.2s;
 }
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255,0,150,0.4);
-}
-
-ul { padding-left:20px; margin-top:10px; }
-li { margin-bottom:5px; font-size:16px; }
-li span { margin-left:10px; color:#ff6b6b; cursor:pointer; }
-
+ul{padding-left:20px}
+li span{margin-left:10px;color:#ff6b6b;cursor:pointer}
 </style>
 </head>
+
 <body>
 
 <h1>Ajouter des Membres</h1>
 
-<!-- Filles -->
 <section>
 <h2>Filles</h2>
-<input type="text" id="fillesInput" placeholder="Nom de la bloomeuses">
+<input id="fillesInput" placeholder="Nom">
 <button onclick="ajouterNom('filles')">Ajouter</button>
 <ul id="fillesListe"></ul>
 </section>
 
-<!-- Garçons -->
 <section>
 <h2>Garçons</h2>
-<input type="text" id="garconsInput" placeholder="Nom du bloomeurs">
+<input id="garconsInput" placeholder="Nom">
 <button onclick="ajouterNom('garcons')">Ajouter</button>
 <ul id="garconsListe"></ul>
 </section>
 
-<!-- Coachs -->
 <section>
 <h2>Coachs</h2>
-<input type="text" id="coachsInput" placeholder="Nom du coach">
+<input id="coachsInput" placeholder="Nom">
 <button onclick="ajouterNom('coachs')">Ajouter</button>
 <ul id="coachsListe"></ul>
 </section>
 
-<!-- Zone unique des membres en base -->
 <section>
-<h2>Tous les membres de BLOOM</h2>
+<h2>Tous les membres en base</h2>
 <ul id="baseListeUnique"></ul>
 </section>
 
-<div style="text-align:center; margin-top:20px; position:relative; z-index:1;">
-<button onclick="envoyerBase()">Enoyer tous les noms en base </button>
-<button onclick="allerPresence()">faire la liste ici</button>
+<div style="text-align:center">
+<button onclick="envoyerBase()">Envoyer tous les noms en base</button>
+<button onclick="allerPresence()">Voir la liste de présence</button>
 </div>
 
 </body>
