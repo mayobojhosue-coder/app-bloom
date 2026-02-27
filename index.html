@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ajouter Membres</title>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+// 🔹 Configuration Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyAbLA-0WqBJ3Zj23rjMuVLX6gjuK-QtAOs",
+  authDomain: "liste-de-presence-bloom.firebaseapp.com",
+  projectId: "liste-de-presence-bloom",
+  storageBucket: "liste-de-presence-bloom.firebasestorage.app",
+  messagingSenderId: "536880469723",
+  appId: "1:536880469723:web:1ed8a69be38546df61defe",
+  measurementId: "G-M9T674XVZY"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const membresRef = collection(db, "membres");
+
+// 🔹 Listes locales temporaires
+let filles = [];
+let garcons = [];
+let coachs = [];
+
+// 🔹 Membres en base persistants
+let baseMembres = [];
+
+// 🔹 Ajouter un nom local
+function ajouterNom(categorie) {
+  const input = document.getElementById(`${categorie}Input`);
+  const nom = input.value.trim();
+  if(!nom) return alert("Entrez un nom !");
+  if(categorie === "filles") filles.push(nom);
+  if(categorie === "garcons") garcons.push(nom);
+  if(categorie === "coachs") coachs.push(nom);
+  input.value = "";
+  afficherListeLocal(categorie);
+}
+
+// 🔹 Afficher la liste locale
+function afficherListeLocal(categorie) {
+  const ul = document.getElementById(`${categorie}Liste`);
+  ul.innerHTML = "";
+  const liste = categorie==="filles"?filles:categorie==="garcons"?garcons:coachs;
+  liste.forEach((nom,i)=>{
+    const li = document.createElement("li");
+    li.innerHTML = `${i+1}. ${nom}`;
+    ul.appendChild(li);
+  });
+}
+
+// 🔹 Envoyer toutes les listes locales en base
+async function envoyerBase() {
+  const allNoms = [
+    ...filles.map(n => ({nom: n, categorie:"Fille"})),
+    ...garcons.map(n => ({nom: n, categorie:"Garçon"})),
+    ...coachs.map(n => ({nom: n, categorie:"Coach"}))
+  ];
+  if(allNoms.length===0) return alert("Aucun nom à envoyer !");
+  for(const m of allNoms) {
+    await addDoc(membresRef, m);
+  }
+  filles=[]; garcons=[]; coachs=[];
+  afficherListeLocal("filles"); afficherListeLocal("garcons"); afficherListeLocal("coachs");
+  alert("Tous les noms ont été envoyés en base !");
+}
+
+// 🔹 Supprimer un membre de la base
+async function supprimerMembre(id) {
+  if(!confirm("Supprimer ce membre de la base ?")) return;
+  await deleteDoc(doc(db,"membres",id));
+}
+
+// 🔹 Récupération en temps réel de la base
+onSnapshot(membresRef, snapshot => {
+  baseMembres = [];
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    baseMembres.push({
+      id: docSnap.id,
+      nom: data.nom,
+      categorie: data.categorie || "Membre"
+    });
+  });
+  afficherBaseUnique();
+});
+
+// 🔹 Afficher tous les membres en base dans une seule zone
+function afficherBaseUnique() {
+  const ul = document.getElementById("baseListeUnique");
+  ul.innerHTML = "";
+  baseMembres.forEach((m,i)=>{
+    const li = document.createElement("li");
+    li.innerHTML = `${i+1}. ${m.nom} (${m.categorie}) <span onclick="supprimerMembre('${m.id}')">❌</span>`;
+    ul.appendChild(li);
+  });
+}
+
+// 🔹 Aller à la liste de présence
+function allerPresence() {
+  window.location.href = "presence.html";
+}
+
+window.ajouterNom = ajouterNom;
+window.envoyerBase = envoyerBase;
+window.supprimerMembre = supprimerMembre;
+window.allerPresence = allerPresence;
+
+</script>
+
+<style>
+/* 🌌 Style sombre BLOOM */
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #121212;
+  color: #eee;
+  padding:20px;
+  position: relative;
+  min-height:100vh;
+  overflow-x: hidden;
+}
+
+/* Filigrane BLOOM */
+body::before {
+  content:"BLOOM";
+  position: absolute;
+  top:50%; left:50%;
+  transform: translate(-50%,-50%) rotate(-15deg);
+  font-size: 200px;
+  color: rgba(255,255,255,0.05);
+  font-weight: bold;
+  letter-spacing: 20px;
+  pointer-events:none;
+  z-index:0;
+}
+
+h1 { text-align:center; margin-bottom:30px; color:#fff; position:relative; z-index:1; }
+
+section {
+  background: #1e1e1e;
+  border-radius: 15px;
+  padding:15px 20px;
+  margin-bottom:20px;
+  position:relative; z-index:1;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+  transition: transform 0.3s;
+}
+section:hover { transform: translateY(-3px); }
+
+h2 { margin-top:0; color:#fff; }
+
+input[type="text"] {
+  width: 70%;
+  padding:10px;
+  border-radius: 8px;
+  border:none;
+  margin-right:5px;
+  background:#2b2b2b;
+  color:#fff;
+}
+input[type="text"]::placeholder { color: #aaa; }
+
+button {
+  padding:10px 20px;
+  margin:5px;
+  border:none;
+  border-radius:10px;
+  font-weight:bold;
+  cursor:pointer;
+  color:#fff;
+  background: linear-gradient(135deg,#6a0dad,#d147a3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255,0,150,0.4);
+}
+
+ul { padding-left:20px; margin-top:10px; }
+li { margin-bottom:5px; font-size:16px; }
+li span { margin-left:10px; color:#ff6b6b; cursor:pointer; }
+
+</style>
+</head>
+<body>
+
+<h1>Ajouter des Membres</h1>
+
+<!-- Filles -->
+<section>
+<h2>Filles</h2>
+<input type="text" id="fillesInput" placeholder="Nom de la bloomeuses">
+<button onclick="ajouterNom('filles')">Ajouter</button>
+<ul id="fillesListe"></ul>
+</section>
+
+<!-- Garçons -->
+<section>
+<h2>Garçons</h2>
+<input type="text" id="garconsInput" placeholder="Nom du bloomeurs">
+<button onclick="ajouterNom('garcons')">Ajouter</button>
+<ul id="garconsListe"></ul>
+</section>
+
+<!-- Coachs -->
+<section>
+<h2>Coachs</h2>
+<input type="text" id="coachsInput" placeholder="Nom du coach">
+<button onclick="ajouterNom('coachs')">Ajouter</button>
+<ul id="coachsListe"></ul>
+</section>
+
+<!-- Zone unique des membres en base -->
+<section>
+<h2>Tous les membres de BLOOM</h2>
+<ul id="baseListeUnique"></ul>
+</section>
+
+<div style="text-align:center; margin-top:20px; position:relative; z-index:1;">
+<button onclick="envoyerBase()">Enoyer tous les noms en base </button>
+<button onclick="allerPresence()">faire la liste ici</button>
+</div>
+
+</body>
+</html>

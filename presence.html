@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liste de Présence</title>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAbLA-0WqBJ3Zj23rjMuVLX6gjuK-QtAOs",
+  authDomain: "liste-de-presence-bloom.firebaseapp.com",
+  projectId: "liste-de-presence-bloom",
+  storageBucket: "liste-de-presence-bloom.firebasestorage.app",
+  messagingSenderId: "536880469723",
+  appId: "1:536880469723:web:1ed8a69be38546df61defe",
+  measurementId: "G-M9T674XVZY"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const membresRef = collection(db, "membres");
+
+let membres = [];
+
+onSnapshot(membresRef, snapshot => {
+  membres = [];
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    membres.push({
+      id: doc.id,
+      nom: data.nom,
+      categorie: data.categorie || "Membre",
+      present: false
+    });
+  });
+  afficherListe();
+});
+
+function afficherListe() {
+  const container = document.getElementById("listeMembres");
+  container.innerHTML = "";
+  membres.forEach((m,i)=>{
+    const div = document.createElement("div");
+    div.className = "membreCheckbox";
+    div.innerHTML = `<input type="checkbox" id="chk${i}" onchange="togglePresent(${i})">
+                     <label for="chk${i}">${m.nom}</label>`;
+    container.appendChild(div);
+  });
+}
+
+window.togglePresent = (index) => { membres[index].present = !membres[index].present; }
+
+window.validerPresence = () => {
+  const today = new Date().getDay();
+  let titre = "Liste de présence :";
+  if(today === 3) titre = "Liste de présence du MDP";
+  if(today === 5) titre = "Liste de présence prière en ligne";
+  if(today === 6) titre = "Liste de présence réunion des jeunes";
+  if(today === 0) titre = "Liste de présence cultes du dimanche";
+
+  const presents = membres.filter(m => m.present).map(m=>`[✅] ${m.nom}`);
+  const absents = membres.filter(m => !m.present).map(m=>`[❌] ${m.nom}`);
+
+  const fillesTotal = membres.filter(m => m.present && m.categorie==="Fille").length;
+  const garconsTotal = membres.filter(m => m.present && m.categorie==="Garçon").length;
+  const coachTotal = membres.filter(m => m.present && m.categorie==="Coach").length;
+
+  let texte = `${titre}\n\n`;
+  texte += "Présents ✅:\n" + (presents.length>0 ? presents.join("\n") : "[ ] Aucun") + "\n\n";
+  texte += "Absents ❌:\n" + (absents.length>0 ? absents.join("\n") : "[ ] Aucun") + "\n\n";
+  texte += "Totaux par catégorie:\n";
+  texte += `[Filles]: ${fillesTotal}\n[Garçons]: ${garconsTotal}\n[Coachs]: ${coachTotal}`;
+
+  document.getElementById("listeCopiable").value = texte;
+}
+
+window.copierListe = () => {
+  const textarea = document.getElementById("listeCopiable");
+  textarea.select();
+  document.execCommand("copy");
+  alert("Liste copiée !");
+}
+</script>
+
+<style>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #121212;
+  color: #eee;
+  padding:20px;
+  position: relative;
+  min-height:100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content:"BLOOM";
+  position: absolute;
+  top:50%; left:50%;
+  transform: translate(-50%,-50%) rotate(-15deg);
+  font-size: 200px;
+  color: rgba(255,255,255,0.05);
+  font-weight: bold;
+  letter-spacing: 20px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* Titres en Algerian */
+h1 { text-align:center; margin-bottom:30px; color:#fff; font-family: Algerian, sans-serif; font-size:2.8em; font-weight:bold; position:relative; z-index:1; }
+h2 { font-family: 'Algerian', sans-serif; font-weight:bold; font-size:1.5em; margin-bottom:10px; }
+
+/* Membres horizontaux */
+#listeMembres {
+  display:flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom:20px;
+  position:relative; z-index:1;
+}
+
+.membreCheckbox {
+  display:flex;
+  align-items:center;
+  background:#1e1e1e;
+  padding:5px 10px;
+  border-radius:8px;
+  font-size:16px;
+  font-family: 'Arial Black', Arial, sans-serif; /* Noms en Arial Black */
+}
+.membreCheckbox input { margin-right:5px; transform:scale(1.2); }
+.membreCheckbox label { cursor:pointer; }
+
+textarea {
+  width:100%; height:300px; margin-top:15px; font-size:16px;
+  border-radius:10px; border:none; padding:10px;
+  background:#1e1e1e; color:#fff;
+  resize:none;
+  font-family: 'Arial Black', Arial, sans-serif; /* Noms en Arial Black */
+}
+
+button {
+  padding:10px 20px;
+  margin:5px;
+  border:none;
+  border-radius:10px;
+  font-weight:bold;
+  cursor:pointer;
+  color:#fff;
+  background: linear-gradient(135deg,#6a0dad,#d147a3);
+}
+button:hover { transform: translateY(-2px); }
+</style>
+</head>
+<body>
+
+<h1>Liste de Présence</h1>
+
+<!-- 🔹 Bouton Retour vers membres.html -->
+<div style="text-align:right; margin-top:10px; position:relative; z-index:1;">
+  <button onclick="window.location.href='index.html'">Retour</button>
+</div>
+
+<h2 style="position:relative; z-index:1;">Liste copiable :</h2>
+<textarea id="listeCopiable" readonly></textarea>
+
+<div id="listeMembres"></div>
+
+<div style="text-align:center; position:relative; z-index:1;">
+<button onclick="validerPresence()">Générer la liste</button>
+<button onclick="copierListe()">Copier la liste</button>
+</div>
+
+<h2 style="position:relative; z-index:1;">Liste copiable :</h2>
+<textarea id="listeCopiable" readonly></textarea>
+
+</body>
+</html>
