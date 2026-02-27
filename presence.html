@@ -108,11 +108,9 @@ body::before {
   z-index:0;
 }
 
-/* Titres en Algerian */
 h1 { text-align:center; margin-bottom:30px; color:#fff; font-family: Algerian, sans-serif; font-size:2.8em; font-weight:bold; position:relative; z-index:1; }
 h2 { font-family: 'Algerian', sans-serif; font-weight:bold; font-size:1.5em; margin-bottom:10px; }
 
-/* Membres horizontaux */
 #listeMembres {
   display:flex;
   flex-wrap: wrap;
@@ -128,7 +126,7 @@ h2 { font-family: 'Algerian', sans-serif; font-weight:bold; font-size:1.5em; mar
   padding:5px 10px;
   border-radius:8px;
   font-size:16px;
-  font-family: 'Arial Black', Arial, sans-serif; /* Noms en Arial Black */
+  font-family: 'Arial Black', Arial, sans-serif;
 }
 .membreCheckbox input { margin-right:5px; transform:scale(1.2); }
 .membreCheckbox label { cursor:pointer; }
@@ -138,7 +136,7 @@ textarea {
   border-radius:10px; border:none; padding:10px;
   background:#1e1e1e; color:#fff;
   resize:none;
-  font-family: 'Arial Black', Arial, sans-serif; /* Noms en Arial Black */
+  font-family: 'Arial Black', Arial, sans-serif;
 }
 
 button {
@@ -158,19 +156,15 @@ button:hover { transform: translateY(-2px); }
 
 <h1>Liste de Présence</h1>
 
-<!-- 🔹 Bouton Retour vers membres.html -->
 <div style="text-align:right; margin-top:10px; position:relative; z-index:1;">
   <button onclick="window.location.href='index.html'">Retour</button>
 </div>
 
-<h2 style="position:relative; z-index:1;">Liste copiable :</h2>
-<textarea id="listeCopiable" readonly></textarea>
-
 <div id="listeMembres"></div>
 
 <div style="text-align:center; position:relative; z-index:1;">
-<button onclick="validerPresence()">Générer la liste</button>
-<button onclick="copierListe()">Copier la liste</button>
+  <button onclick="validerPresence()">Générer la liste</button>
+  <button onclick="copierListe()">Copier la liste</button>
 </div>
 
 <h2 style="position:relative; z-index:1;">Liste copiable :</h2>
