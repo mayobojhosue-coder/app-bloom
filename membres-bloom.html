@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Membres BLOOM</title>
+
+<!-- 🔹 Police améliorée -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+/* 🔹 Firebase (IDENTIQUE) */
+const firebaseConfig = {
+  apiKey: "AIzaSyAbLA-0WqBJ3Zj23rjMuVLX6gjuK-QtAOs",
+  authDomain: "liste-de-presence-bloom.firebaseapp.com",
+  projectId: "liste-de-presence-bloom",
+  storageBucket: "liste-de-presence-bloom.firebasestorage.app",
+  messagingSenderId: "536880469723",
+  appId: "1:536880469723:web:1ed8a69be38546df61defe",
+  measurementId: "G-M9T674XVZY"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const membresRef = collection(db, "membres");
+
+/* 🔹 Listes */
+let filles = [];
+let garcons = [];
+let coachs = [];
+
+/* 🔹 Lecture base */
+onSnapshot(membresRef, snap => {
+  filles = [];
+  garcons = [];
+  coachs = [];
+
+  snap.forEach(d => {
+    const data = d.data();
+    if(data.categorie === "Fille") filles.push(data.nom);
+    if(data.categorie === "Garçon") garcons.push(data.nom);
+    if(data.categorie === "Coach") coachs.push(data.nom);
+  });
+
+  afficher();
+});
+
+/* 🔹 Affichage */
+function afficher(){
+  afficherListe("fillesListe", filles);
+  afficherListe("garconsListe", garcons);
+  afficherListe("coachsListe", coachs);
+
+  /* 🔹 Totaux (AJOUT) */
+  document.getElementById("totalFilles").textContent = filles.length;
+  document.getElementById("totalGarcons").textContent = garcons.length;
+  document.getElementById("totalCoachs").textContent = coachs.length;
+  document.getElementById("totalGeneral").textContent =
+    filles.length + garcons.length + coachs.length;
+}
+
+function afficherListe(id, liste){
+  const ul = document.getElementById(id);
+  ul.innerHTML = "";
+  liste.forEach((nom,i)=>{
+    const li = document.createElement("li");
+    li.textContent = `${i+1}. ${nom}`;
+    ul.appendChild(li);
+  });
+}
+
+/* 🔹 Retour */
+function retourBase(){
+  window.location.href = "index.html";
+}
+window.retourBase = retourBase;
+</script>
+
+<style>
+body{
+  font-family:'Poppins','Segoe UI',Arial;
+  background:#121212;
+  color:#eee;
+  padding:20px;
+  min-height:100vh;
+  position:relative;
+}
+body::before{
+  content:"BLOOM";
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(-15deg);
+  font-size:200px;
+  color:rgba(255,255,255,.05);
+  letter-spacing:20px;
+  pointer-events:none;
+}
+section{
+  background:#1e1e1e;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:20px;
+}
+ul{padding-left:20px}
+li{
+  padding:6px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  font-weight:300;
+}
+button{
+  padding:12px 28px;
+  border:none;
+  border-radius:14px;
+  font-weight:600;
+  background:linear-gradient(135deg,#6a0dad,#d147a3);
+  color:#fff;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Membres BLOOM-BOSS</h1>
+
+<section>
+<h2>FILLES (<span id="totalFilles">0</span>)</h2>
+<ul id="fillesListe"></ul>
+</section>
+
+<section>
+<h2> Garçons (<span id="totalGarcons">0</span>)</h2>
+<ul id="garconsListe"></ul>
+</section>
+
+<section>
+<h2>COACHS (<span id="totalCoachs">0</span>)</h2>
+<ul id="coachsListe"></ul>
+</section>
+
+<section>
+<h2>📊 Total général : <span id="totalGeneral">0</span></h2>
+</section>
+
+<div style="text-align:center;margin-top:30px">
+  <button onclick="retourBase()">⬅ Retour à la base</button>
+</div>
+
+</body>
+</html>
