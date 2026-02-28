@@ -68,7 +68,7 @@ function afficherListeLocal(categorie) {
   });
 }
 
-/* 🔹 Envoi en base (LES NOMS RESTENT) */
+/* 🔹 Envoi en base */
 async function envoyerBase() {
   const allNoms = [
     ...filles.map(n => ({nom:n, categorie:"Fille"})),
@@ -77,7 +77,7 @@ async function envoyerBase() {
   ];
   if(allNoms.length === 0) return alert("Aucun nom à envoyer !");
   for(const m of allNoms) await addDoc(membresRef, m);
-  alert("Noms envoyés en base (ils restent affichés)");
+  alert("Noms envoyés en base");
 }
 
 /* 🔹 Supprimer en base */
@@ -115,11 +115,17 @@ function allerPresence(){
   window.location.href = "presence.html";
 }
 
+/* 🔹 NOUVEL AJOUT (DEMANDE) */
+function allerBaseMembres(){
+  window.location.href = "membres-bloom.html";
+}
+
 window.ajouterNom = ajouterNom;
 window.envoyerBase = envoyerBase;
 window.supprimerLocal = supprimerLocal;
 window.supprimerMembre = supprimerMembre;
 window.allerPresence = allerPresence;
+window.allerBaseMembres = allerBaseMembres;
 </script>
 
 <style>
@@ -202,6 +208,7 @@ li span{margin-left:10px;color:#ff6b6b;cursor:pointer}
 <div style="text-align:center">
 <button onclick="envoyerBase()">Envoyer tous les noms en base</button>
 <button onclick="allerPresence()">Voir la liste de présence</button>
+<button onclick="allerBaseMembres()">Aller à la base Membres BLOOM</button>
 </div>
 
 </body>
